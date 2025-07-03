@@ -1,22 +1,19 @@
-# .github/workflows/build-and-push.yml
+# .github/workflows/build-and-push.yml (Final Versiyon)
 
-name: Build and Push Custom Runner Image
+name: Build and Push Custom Runner Image on Self-Hosted Runner
 
 on:
-  # Bu iş akışı, 'main' branch'ine her push yapıldığında çalışsın.
   push:
     branches:
       - main
-  # Bu iş akışını manuel olarak da tetikleyebilmek için.
   workflow_dispatch:
 
 jobs:
-  build-with-kaniko:
-    name: Build Runner with Kaniko
-    # Bu işi, GitHub'ın kendi sanal makinelerinde çalıştırıyoruz.
-    runs-on: ubuntu-latest
+  build-on-self-hosted:
+    name: Build on Self-Hosted Runner
+    # İşi, GitHub'ın sanal makinesi yerine KENDİ RUNNER'IMIZA veriyoruz.
+    runs-on: self-hosted
 
-    # ghcr.io'ya yazma izni veriyoruz.
     permissions:
       contents: read
       packages: write
@@ -32,15 +29,8 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: 3. Build and push with Kaniko
-        # Kaniko'yu çalıştıran hazır Action'ı kullanıyoruz.
-        uses: aevea/action-kaniko@v0.10.0
-        with:
-          # Build edilecek imajın tam adı
-          image: ghcr.io/my-homelab-platform/homelab-k8s-runner
-          # Dockerfile'ın yolu (reponun kök dizininde)
-          dockerfile: ./Dockerfile
-          # Build context'i (reponun kök dizini)
-          context: .
-          # Etiket olarak en son commit'in SHA'sını kullanıyoruz
-          tags: latest,${{ github.sha }}
+      - name: 3. Build and Push with Local Docker
+        # Artık Kaniko'ya ihtiyacımız yok. Runner'ımız doğrudan Docker komutlarını çalıştıracak.
+        run: |
+          docker build -t ghcr.io/${{ github.repository_owner }}/homelab-k8s-runner:latest .
+          docker push ghcr.io/${{ github.repository_owner }}/homelab-k8s-runner:latest
