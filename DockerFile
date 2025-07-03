@@ -1,0 +1,27 @@
+# Temel olarak hafif bir Ubuntu imajı kullanıyoruz
+FROM ubuntu:22.04
+
+# Runner'ın ihtiyaç duyacağı araçları kuruyoruz:
+# curl: Dosya indirmek için
+# jq:   JSON verisini işlemek için (API cevabından token'ı almak için)
+# git:  Versiyon kontrol sistemi
+# Not: Bu imajın içine Docker veya kubectl kurmuyoruz, çünkü bu runner'ın görevi
+# sadece Kubernetes'te yaşamak, deploy komutlarını çalıştırmak ise başka bir konu.
+# Eğer Docker komutları da çalıştıracaksa, Docker client'ını da kurmamız gerekir.
+RUN apt-get update && apt-get install -y \
+    curl \
+    jq \
+    git \
+    iproute2
+
+# Güvenlik için 'runner' adında ayrı bir kullanıcı oluşturuyoruz
+RUN useradd -m runner
+USER runner
+WORKDIR /home/runner
+
+# Konteyner başladığında çalışacak olan script'i kopyalıyoruz
+COPY --chown=runner:runner entrypoint.sh .
+RUN chmod +x ./entrypoint.sh
+
+# Konteynerin başlangıç noktası olarak bu script'i belirliyoruz
+ENTRYPOINT ["./entrypoint.sh"]
