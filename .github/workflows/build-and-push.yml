@@ -1,6 +1,6 @@
-# .github/workflows/build-and-push.yml (Final Versiyon)
+# .github/workflows/build-and-push.yml (Nihai Versiyon)
 
-name: Build and Push Custom Runner Image on Self-Hosted Runner
+name: Build and Push Custom Runner Image
 
 on:
   push:
@@ -9,10 +9,10 @@ on:
   workflow_dispatch:
 
 jobs:
-  build-on-self-hosted:
-    name: Build on Self-Hosted Runner
-    # İşi, GitHub'ın sanal makinesi yerine KENDİ RUNNER'IMIZA veriyoruz.
-    runs-on: self-hosted
+  build-with-kaniko:
+    name: Build Custom Runner Image
+    # DEĞİŞİKLİK: İşi, GitHub'ın kendi sanal makinelerinde çalıştırıyoruz.
+    runs-on: ubuntu-latest
 
     permissions:
       contents: read
@@ -29,8 +29,10 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: 3. Build and Push with Local Docker
-        # Artık Kaniko'ya ihtiyacımız yok. Runner'ımız doğrudan Docker komutlarını çalıştıracak.
-        run: |
-          docker build -t ghcr.io/${{ github.repository_owner }}/homelab-k8s-runner:latest .
-          docker push ghcr.io/${{ github.repository_owner }}/homelab-k8s-runner:latest
+      - name: 3. Build and Push with Kaniko
+        uses: aevea/action-kaniko@v0.10.0
+        with:
+          image: ghcr.io/my-homelab-platform/homelab-k8s-runner
+          dockerfile: ./Dockerfile
+          context: .
+          tags: latest,${{ github.sha }}
